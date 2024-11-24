@@ -7,10 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/debug"
 	"strings"
+	"syscall"
 
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/connection"
 	"k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/derailed/k9s/internal/client"
@@ -104,22 +107,51 @@ func run(cmd *cobra.Command, args []string) error {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 
+	if *k9sFlags.Connection != "" {
+		cfg := preloadConfig()
+
+		conn, ok := cfg.K9s.Connections[*k9sFlags.Connection]
+		if !ok {
+			return fmt.Errorf("connection %s not found", *k9sFlags.Connection)
+		}
+
+		kubeConfig, err := connection.Start(conn)
+		if err != nil {
+			return fmt.Errorf("connection %s failed: %v", *k9sFlags.Connection, err)
+		}
+		k8sFlags.KubeConfig = &kubeConfig
+	}
+
 	cfg, err := loadConfiguration()
 	if err != nil {
 		log.Error().Err(err).Msgf("Fail to load global/context configuration")
 	}
+
 	app := view.NewApp(cfg)
+	registerForShutdown(app)
+
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
+		connection.Stop()
 		return err
 	}
 	if err := app.Run(); err != nil {
+		connection.Stop()
 		return err
 	}
 	if view.ExitStatus != "" {
+		connection.Stop()
 		return fmt.Errorf("view exit status %s", view.ExitStatus)
 	}
 
+	connection.Stop()
+
 	return nil
+}
+
+func preloadConfig() *config.Config {
+	k9sCfg := config.NewConfig(nil)
+	k9sCfg.Load(config.AppConfigFile, false)
+	return k9sCfg
 }
 
 func loadConfiguration() (*config.Config, error) {
@@ -248,6 +280,12 @@ func initK9sFlags() {
 		"screen-dump-dir",
 		"",
 		"Sets a path to a dir for a screen dumps",
+	)
+	rootCmd.Flags().StringVarP(
+		k9sFlags.Connection,
+		"connection", "C",
+		"",
+		"Connect to k8s using a predefined k9s connection",
 	)
 	rootCmd.Flags()
 }
@@ -407,4 +445,17 @@ func filterFlagCompletions[T any](m map[string]T, s string) ([]string, cobra.She
 	}
 
 	return cc, cobra.ShellCompDirectiveNoFileComp
+}
+
+func registerForShutdown(app *view.App) {
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		connection.Stop()
+		app.BailOut()
+		<-c
+		os.Exit(1)
+	}()
 }
