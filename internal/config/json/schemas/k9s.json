@@ -127,7 +127,8 @@
               }
             }
           }
-        }
+        },
+        "connections": { "type": "object" }
       }
     }
   },

@@ -21,20 +21,21 @@ import (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
-	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
-	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
-	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
-	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
-	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
-	PortForwardAddress  string     `yaml:"portForwardAddress"`
-	UI                  UI         `json:"ui" yaml:"ui"`
-	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
-	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
-	ShellPod            ShellPod   `json:"shellPod" yaml:"shellPod"`
-	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
-	Logger              Logger     `json:"logger" yaml:"logger"`
-	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
+	LiveViewAutoRefresh bool                   `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
+	ScreenDumpDir       string                 `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	RefreshRate         int                    `json:"refreshRate" yaml:"refreshRate"`
+	MaxConnRetry        int                    `json:"maxConnRetry" yaml:"maxConnRetry"`
+	ReadOnly            bool                   `json:"readOnly" yaml:"readOnly"`
+	NoExitOnCtrlC       bool                   `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	PortForwardAddress  string                 `yaml:"portForwardAddress"`
+	UI                  UI                     `json:"ui" yaml:"ui"`
+	SkipLatestRevCheck  bool                   `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
+	DisablePodCounting  bool                   `json:"disablePodCounting" yaml:"disablePodCounting"`
+	ShellPod            ShellPod               `json:"shellPod" yaml:"shellPod"`
+	ImageScans          ImageScans             `json:"imageScans" yaml:"imageScans"`
+	Logger              Logger                 `json:"logger" yaml:"logger"`
+	Thresholds          Threshold              `json:"thresholds" yaml:"thresholds"`
+	Connections         map[string]*Connection `json:"connections" yaml:"connections"`
 	manualRefreshRate   int
 	manualReadOnly      *bool
 	manualCommand       *string
@@ -59,6 +60,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 		PortForwardAddress: defaultPFAddress(),
 		ShellPod:           NewShellPod(),
 		ImageScans:         NewImageScans(),
+		Connections:        make(map[string]*Connection),
 		dir:                data.NewDir(AppContextsDir),
 		conn:               conn,
 		ks:                 ks,
@@ -122,6 +124,9 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ImageScans = k1.ImageScans
 	if k1.Thresholds != nil {
 		k.Thresholds = k1.Thresholds
+	}
+	for name, conn := range k1.Connections {
+		k.Connections[name] = conn
 	}
 }
 
