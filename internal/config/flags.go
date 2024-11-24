@@ -12,6 +12,9 @@ const (
 
 	// DefaultCommand represents the default command to run.
 	DefaultCommand = ""
+
+	// DefaultConnection represents the default connection to use.
+	DefaultConnection = ""
 )
 
 // Flags represents K9s configuration flags.
@@ -27,6 +30,7 @@ type Flags struct {
 	Write         *bool
 	Crumbsless    *bool
 	ScreenDumpDir *string
+	Connection    *string
 }
 
 // NewFlags returns new configuration flags.
@@ -43,6 +47,7 @@ func NewFlags() *Flags {
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
 		ScreenDumpDir: strPtr(AppDumpsDir),
+		Connection:    strPtr(DefaultConnection),
 	}
 }
 
