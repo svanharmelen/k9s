@@ -131,7 +131,8 @@
               }
             }
           }
-        }
+        },
+        "connections": { "type": "object" }
       }
     }
   },

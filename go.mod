@@ -19,9 +19,11 @@ require (
 	github.com/lmittmann/tint v1.0.7
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-runewidth v0.0.16
+	github.com/mitchellh/go-linereader v0.0.0-20190213213312-1b945b3263eb
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
+	github.com/rs/zerolog v1.22.0
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
